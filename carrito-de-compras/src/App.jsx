@@ -7,19 +7,18 @@ import { Link, Outlet } from 'react-router';
 import './App.css';
 
 function App() {
-  const [count, setCount] = useState(0);
+  const [carrito, setCarrito] = useState([]);
 
   return (
     <div>
       <nav>
         <Link to="/">Inicio</Link>
-        <Link to="/carrito">Carrito de compras</Link>
+        <Link to="/carrito">Carrito de compras ({carrito.length})</Link>
         <Link to="/tienda">Tienda</Link>
       </nav>
 
       <main>
-        {/* Aquí indicamos dónde va el contenido de las vistas hijas */}
-        <Outlet />
+        <Outlet context={{ carrito, setCarrito }} />
       </main>
     </div>
   );
