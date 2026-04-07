@@ -1,6 +1,78 @@
 import { useEffect, useState } from 'react';
 import { useOutletContext } from 'react-router';
 
+// 1. NUEVO COMPONENTE: Cada tarjeta tiene su propia memoria
+function TarjetaProducto({
+  item,
+  carrito,
+  setCarrito,
+  tarjetaStyle,
+  imagenStyle,
+  nombreStyle,
+}) {
+  const [cantidad, setCantidad] = useState(1);
+
+  return (
+    <div style={tarjetaStyle}>
+      <img src={item.imagen} alt={item.nombre} style={imagenStyle} />
+      <h3 style={nombreStyle}>{item.nombre}</h3>
+      <p style={{ fontWeight: 'bold', color: '#e67e22', fontSize: '1.2rem' }}>
+        ₽ {item.precio}
+      </p>
+
+      {/* Input que lee la memoria de esta tarjeta en específico */}
+      <input type="number" min={1} max={99} value={cantidad} readOnly />
+
+      <div>
+        <button onClick={() => setCantidad(cantidad + 1)}>+</button>
+        <button
+          onClick={() => {
+            if (cantidad > 1) {
+              setCantidad(cantidad - 1);
+            }
+          }}
+        >
+          -
+        </button>
+      </div>
+
+      <button
+        onClick={() => {
+          // Buscamos si ya existe
+          const posicion = carrito.findIndex(
+            (productoGuardado) => productoGuardado.id === item.id
+          );
+
+          if (posicion === -1) {
+            // Es nuevo: Lo agregamos con la cantidad que eligió el usuario
+            setCarrito([...carrito, { ...item, cantidad: cantidad }]);
+          } else {
+            // Ya existe: Le sumamos la cantidad que eligió el usuario
+            const nuevoCarrito = [...carrito];
+            nuevoCarrito[posicion].cantidad += cantidad;
+            setCarrito(nuevoCarrito);
+          }
+
+          // Regresamos el contador de la tarjeta a 1 después de añadir
+          setCantidad(1);
+        }}
+        style={{
+          backgroundColor: '#e74c3c',
+          color: 'white',
+          border: 'none',
+          padding: '10px 15px',
+          borderRadius: '5px',
+          cursor: 'pointer',
+          marginTop: '10px',
+        }}
+      >
+        Añadir
+      </button>
+    </div>
+  );
+}
+
+// 2. COMPONENTE PRINCIPAL DE LA TIENDA
 function Tienda() {
   const [items, setItems] = useState([]);
   const { carrito, setCarrito } = useOutletContext();
@@ -13,6 +85,7 @@ function Tienda() {
       fetch('https://pokeapi.co/api/v2/item?limit=20')
         .then((respuesta) => respuesta.json())
         .then((datos) => {
+          // Aquí solo preparamos los datos puros
           const itemsCompletos = datos.results.map((item) => {
             return {
               id: item.name,
@@ -56,7 +129,6 @@ function Tienda() {
     objectFit: 'contain',
     marginBottom: '10px',
   };
-
   const nombreStyle = {
     textTransform: 'capitalize',
     fontSize: '1.1rem',
@@ -76,69 +148,18 @@ function Tienda() {
       </h1>
 
       <div style={contenedorGridStyle}>
-        {items.map((item) => {
-          // 1. ESPACIO PARA VARIABLES
-          // Buscamos si este ítem específico ya está en el carrito
-          const productoEnCarrito = carrito.find(
-            (productoGuardado) => productoGuardado.id === item.id
-          );
-
-          // Si existe, tomamos su cantidad. Si no (es undefined), la cantidad es 0.
-          const cantidadActual = productoEnCarrito
-            ? productoEnCarrito.cantidad
-            : 0;
-
-          // 2. RETORNO VISUAL (Usando 'return' explícito)
-          return (
-            <div key={item.id} style={tarjetaStyle}>
-              <img src={item.imagen} alt={item.nombre} style={imagenStyle} />
-              <h3 style={nombreStyle}>{item.nombre}</h3>
-              <p
-                style={{
-                  fontWeight: 'bold',
-                  color: '#e67e22',
-                  fontSize: '1.2rem',
-                }}
-              >
-                ₽ {item.precio}
-              </p>
-
-              {/* AQUÍ ESTÁ NUESTRO INPUT */}
-              <input type="number" min={0} max={99} value={cantidadActual} />
-
-              <div>
-                <button>+</button>
-                <button>-</button>
-              </div>
-
-              <button
-                onClick={() => {
-                  const posicion = carrito.findIndex(
-                    (productoGuardado) => productoGuardado.id === item.id
-                  );
-                  if (posicion === -1) {
-                    setCarrito([...carrito, { ...item, cantidad: 1 }]);
-                  } else {
-                    const nuevoCarrito = [...carrito];
-                    nuevoCarrito[posicion].cantidad += 1;
-                    setCarrito(nuevoCarrito);
-                  }
-                }}
-                style={{
-                  backgroundColor: '#e74c3c',
-                  color: 'white',
-                  border: 'none',
-                  padding: '10px 15px',
-                  borderRadius: '5px',
-                  cursor: 'pointer',
-                  marginTop: '10px',
-                }}
-              >
-                Añadir
-              </button>
-            </div>
-          );
-        })}
+        {items.map((item) => (
+          // Dibujamos la tarjeta independiente y le pasamos los datos y estilos
+          <TarjetaProducto
+            key={item.id}
+            item={item}
+            carrito={carrito}
+            setCarrito={setCarrito}
+            tarjetaStyle={tarjetaStyle}
+            imagenStyle={imagenStyle}
+            nombreStyle={nombreStyle}
+          />
+        ))}
       </div>
     </div>
   );
